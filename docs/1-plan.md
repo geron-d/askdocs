@@ -1,4 +1,4 @@
-# Демо 1 — «ИИ-консультант по базе знаний» (RAG на Spring Boot + GigaChat)
+# Демо 1 — «ИИ-консультант по базе знаний» (RAG на Spring Boot + OpenCode Go)
 
 **Задача:** довести пункт 3.1 из `05-fl-ru-profile-fill.md` (и `02` Task 3.1 / 3.2) до публичного демо-репозитория `askdocs` — работающий RAG-ассистент по базе знаний вымышленного helpdesk-SaaS, с воспроизводимой метрикой качества и статьёй-черновиком. Это ядро портфолио: ссылка на него ставится в каждый отклик и в прайс-лист «ИИ-ассистент по базе знаний (RAG)».
 
@@ -29,7 +29,7 @@
 | 1 | Тема: FAQ/мануалы вымышленного helpdesk-SaaS |
 | 2 | Язык: только русский |
 | 3 | Стек: LangChain4j 1.23.0 + Spring Boot 3.x, PostgreSQL + pgvector, REST + Telegram-бот |
-| 4 | Провайдер: GigaChat — генерация `GigaChat-2-Pro`, эмбеддинги `Embeddings` (base) |
+| 4 | Провайдер генерации: OpenCode Go (подписка Go, $10/мес), модель `deepseek-v4.1-flash`, OpenAI-compatible endpoint. Эмбеддинги: локальная `bge-m3` через Ollama |
 | 5 | Retrieval v1: семантический поиск + порог релевантности + честное «не знаю» |
 | 6 | Корпус: 3–4 PDF + 2–3 DOCX + 30–50 FAQ, ~300–500 чанков; генерация LLM-ассистом + ручная вычитка |
 | 7 | Метрики: precision@5 ≥ 0.80, hit-rate ≥ 0.85, p95 ≤ 2.0 c, accuracy «не знаю» ≥ 0.90 |
@@ -40,7 +40,7 @@
 | 12 | Статья: `docs/article-habr.md` (формат Habr), только в проекте, нигде не публикуется |
 | 13 | Backlog: `docs/backlog/`, один файл на пункт, все `worth: later` |
 
-**Допущения по умолчанию:** Java 21 (LTS) · сборка Maven · Spring Boot 3.5.x · Telegram через `telegrambots` (Java Telegram Bot API) · авторизация GigaChat через OAuth-token-exchange → OpenAI-compatible `api.giga.chat/v1`.
+**Допущения по умолчанию:** Java 21 (LTS) · сборка Maven · Spring Boot 3.5.x · Telegram через `telegrambots` (Java Telegram Bot API) · OpenCode Go через OpenAI-compatible `https://opencode.ai/inference/go/openai/v1` (статичный API key) · эмбеддинги локально через Ollama (`bge-m3`).
 
 ---
 
@@ -48,10 +48,10 @@
 
 ### Этап 0. Предпосылки (блокер доступа + стек)
 
-- [ ] **0.1** Получить ключ GigaChat (OAuth-token-exchange через `ngw.devices.sberbank.ru:9443/api/v2/oauth`), подтвердить, что оплата и API-доступ работают из РБ. **Если не проходит — стоп**, возврат к выбору провайдера (YandexGPT / `ai.fl.ru`), дальше не строим
-- [ ] **0.2** Посчитать стоимость: 1000 генераций `GigaChat-2-Pro` (0.5 ₽/1k токенов) + 1000 эмбеддинг-запросов (`Embeddings`, 0.014 ₽/1k) на тестовом корпусе
+- [ ] **0.1** Оформить подписку OpenCode Go ($10/мес), получить API key в Console, подтвердить вызов `deepseek-v4.1-flash` через `https://opencode.ai/inference/go/openai/v1` из РБ. **Если не проходит — стоп**, возврат к выбору провайдера (GigaChat / YandexGPT), дальше не строим
+- [ ] **0.2** Поднять Ollama с моделью `bge-m3` в `docker-compose`, проверить эмбеддинги и интеграцию `langchain4j-ollama` на Spring Boot 3.5; зафиксировать размерность вектора
 - [ ] **0.3** Поднять PostgreSQL + pgvector (`docker-compose`), проверить, что `langchain4j-pgvector` работает на Spring Boot 3.5
-- [ ] **0.4 Проверка готовности Этапа 0:** рабочий ключ + подтверждённый биллинг из РБ + pgvector отвечает
+- [ ] **0.4 Проверка готовности Этапа 0:** рабочий ключ OpenCode Go + локальные эмбеддинги + pgvector отвечает; 1000 генераций укладываются в месячный лимит Go (allowance `deepseek-v4.1-flash` — $100)
 
 ### Этап 1. Корпус и эталон
 
@@ -63,7 +63,7 @@
 
 ### Этап 2. Ядро RAG
 
-- [ ] **2.1** Ingestion: PDF/DOCX/MD → чанкинг (подобрать размер и overlap) → эмбеддинги GigaChat → запись в pgvector
+- [ ] **2.1** Ingestion: PDF/DOCX/MD → чанкинг (подобрать размер и overlap) → эмбеддинги `bge-m3` (Ollama) → запись в pgvector
 - [ ] **2.2** Retrieval: семантический поиск топ-k + порог релевантности
 - [ ] **2.3** Generation: промпт с цитатами на источники + правило «нет ответа в контексте → честно сказать»; ретраи, таймауты, fallback-модель и деградация при недоступности
 - [ ] **2.4 Проверка готовности Этапа 2:** end-to-end ответ со ссылками; на негативных вопросах — «не знаю»
@@ -97,7 +97,7 @@
 
 ## Критерии готовности всего демо
 
-1. Есть ключ/биллинг GigaChat из РБ (или перевыбран провайдер) — Этап 0.
+1. Есть рабочая подписка OpenCode Go и локальные эмбеддинги `bge-m3` (или перевыбран провайдер) — Этап 0.
 2. Корпус + 100 позитивных + 20 негативных эталонов — Этап 1.
 3. End-to-end RAG со ссылками и честным «не знаю» — Этапы 2–3.
 4. Все 4 метрики ≥ целевых, CI зелёный — Этап 4.
@@ -107,7 +107,8 @@
 
 ## Блокеры и риски
 
-- **Блокер A — доступ GigaChat из РБ.** Нигде явно не заявлен; снимается только реальной попыткой получить ключ (шаг 0.1). Первое действие плана.
+- **Блокер A — доступ OpenCode Go из РБ.** Сервис заявлен как «для международных пользователей» с глобальным доступом, но РБ явно не подтверждена; снимается только реальной попыткой оформления и вызова (шаг 0.1). Первое действие плана.
+- **Блокер B — назначение OpenCode Go.** Подписка предназначена для coding-агентов, трафик модерируется на злоупотребления. RAG-демо — нетипичный трафик; для демо объёма должно хватить, но как production-канал для клиента подписку продавать нельзя — в статье/README честно указывать ограничение.
 - **Spring AI 2.x требует Spring Boot 4.x.** Поэтому выбран LangChain4j 1.23 на Boot 3.x; альтернатива — отдельное демо на Spring AI (в backlog).
 - **Scope creep приёмки.** Метрика зафиксирована заранее (precision@5 / hit-rate / p95 / «не знаю»), а не «удовлетворённость заказчика».
 - **NDA.** Только синтетические данные; никаких клиентов, скриншотов и схем из рабочих систем.
@@ -117,7 +118,7 @@
 
 ## Документы репозитория
 
-- `docs/spec.md` — техническая спецификация: операциональные метрики (hit@5, hit-rate, «не знаю», p95), спека продукта, чанкинг, порог отказа, промпт, OAuth GigaChat, контракт REST/бота, рубрика оценки, метод генерации эталона.
+- `docs/1-spec.md` — техническая спецификация: операциональные метрики (hit@5, hit-rate, «не знаю», p95), спека продукта, чанкинг, порог отказа, промпт, ключи OpenCode Go и Ollama, контракт REST/бота, рубрика оценки, метод генерации эталона.
 - `docs/backlog/` — отложенные пункты v2 (по файлу на пункт).
 
 ---
@@ -136,8 +137,8 @@
 
 ---
 
-## Источники (проверено 01.11.2026)
+## Источники (проверено 04.11.2026)
 
-`docs.langchain4j.dev` (релиз 1.23.0, интеграции, OpenAI-Compatible, pgvector) · `docs.spring.io/spring-ai` (2.0.x требует Spring Boot 4.0/4.1; для Boot 3.x — Spring AI 1.1.x) · `developers.sber.ru/docs/ru/gigachat` (модели генерации и эмбеддингов, тарифы, OpenAI-compat) · `github.com/yandex-cloud/yandex-ai-studio-sdk` (асимметричные эмбеддинги `text-search-doc`/`text-search-query`) · `pinecone.io/learn/retrieval-augmented-generation` · `aws.amazon.com/what-is/retrieval-augmented-generation` · `ibm.com/think/topics/retrieval-augmented-generation` (use-cases RAG).
+`docs.langchain4j.dev` (релиз 1.23.0, интеграции, OpenAI-Compatible, Ollama, pgvector) · `docs.spring.io/spring-ai` (2.0.x требует Spring Boot 4.0/4.1; для Boot 3.x — Spring AI 1.1.x) · `opencode.ai/docs/go` (подписка Go, модели, лимиты, endpoint `opencode.ai/inference/go/openai/v1`) · `ollama.com/library/bge-m3` (многоязычные эмбеддинги) · `github.com/yandex-cloud/yandex-ai-studio-sdk` (асимметричные эмбеддинги `text-search-doc`/`text-search-query`) · `pinecone.io/learn/retrieval-augmented-generation` · `aws.amazon.com/what-is/retrieval-augmented-generation` · `ibm.com/think/topics/retrieval-augmented-generation` (use-cases RAG).
 
-⚠️ Доступность GigaChat/YandexGPT для резидента РБ нигде явно не подтверждена; точные цены YandexGPT за SSO-стеной — проверять в консоли.
+⚠️ Доступность OpenCode Go из РБ явно не подтверждена (проверять шагом 0.1); трафик Go ориентирован на coding-агентов. `bge-m3` в Ollama требует ~2–3 ГБ RAM/VRAM и качается при первом запуске.

@@ -1,10 +1,10 @@
 # Техническая спецификация демо `askdocs`
 
-**Что это:** детализация к `docs/plan.md`. План отвечает «что и в каком порядке»; здесь — «как именно»: операциональные метрики, спека корпуса, чанкинг, порог отказа, промпт, OAuth, контракт API, рубрика оценки и метод генерации эталона.
+**Что это:** детализация к `docs/1-plan.md`. План отвечает «что и в каком порядке»; здесь — «как именно»: операциональные метрики, спека корпуса, чанкинг, порог отказа, промпт, ключи OpenCode Go/Ollama, контракт API, рубрика оценки и метод генерации эталона.
 
 **Дата:** 01.11.2026. Стартовые числа — подлежат подгонке на Этапе 4 по метрике; итоговые значения фиксируются в README.
 
-> ⚠️ Терминология метрики ретрива: в `plan.md` она названа «precision@5», но операционально это **hit@5** (доля попаданий эталонного чанка в топ-5), а не строгий precision@k (`|relevant ∩ retrieved| / k`). Здесь используем `hit@5`; в README/статье писать именно так. Переименование в `plan.md` — отдельное согласование.
+> ⚠️ Терминология метрики ретрива: в `1-plan.md` она названа «precision@5», но операционально это **hit@5** (доля попаданий эталонного чанка в топ-5), а не строгий precision@k (`|relevant ∩ retrieved| / k`). Здесь используем `hit@5`; в README/статье писать именно так. Переименование в `1-plan.md` — отдельное согласование.
 
 ---
 
@@ -93,14 +93,21 @@
 
 ---
 
-## 6. GigaChat: OAuth и секреты (0.1)
+## 6. OpenCode Go и Ollama: ключи и секреты (0.1–0.2)
 
-1. Получить `client_id`/`client_secret` в ЛК (scope `GIGACHAT_API_PERS`).
-2. `POST https://ngw.devices.sberbank.ru:9443/api/v2/oauth` (Basic: `client_id:secret`, body `scope=GIGACHAT_API_PERS`) → `access_token` (~30 мин жизни).
-3. Вызовы к `https://api.giga.chat/v1/chat/completions` и `/embeddings`, заголовок `Authorization: Bearer <access_token>`.
-4. **Хранение:** всё в env/`.env` (`.env` в `.gitignore`), в `application.yml` — `${GIGACHAT_CLIENT_ID}` и т.п. Никакого хардкода.
-5. **Обновление токена:** обёртка-провайдер кеширует `access_token`, обновляет по истечению/401.
-6. **Критерий «доступ из РБ подтверждён»:** прошёл OAuth, прошёл 1 `/embeddings` и 1 `/chat/completions`, в кабинете видно лимит/списание фримиума.
+**Генерация — OpenCode Go:**
+
+1. Оформить подписку Go ($10/мес) в [OpenCode Console](https://opencode.ai/console), скопировать API key.
+2. Endpoint — OpenAI-compatible: `https://opencode.ai/inference/go/openai/v1/chat/completions`, заголовок `Authorization: Bearer <OPENCODE_GO_API_KEY>`, модель `deepseek-v4.1-flash`.
+3. Клиент идентифицирует себя своим user-agent и передаёт стабильный `x-opencode-session` на диалог (требование Go).
+4. **Хранение:** `OPENCODE_GO_API_KEY` в env/`.env` (`.env` в `.gitignore`), в `application.yml` — `${OPENCODE_GO_API_KEY}`. Никакого хардкода.
+
+**Эмбеддинги — локальный Ollama:**
+
+5. Сервис `ollama` в `docker-compose`, модель `bge-m3` (многоязычная, dim 1024); интеграция `langchain4j-ollama`.
+6. Base URL — `http://ollama:11434`, ключ не нужен; том для моделей, чтобы не качать при каждом старте.
+
+**Критерий готовности:** прошёл 1 `/chat/completions` через OpenCode Go и 1 `/api/embed` через Ollama, pgvector принял вектор `bge-m3`; 1000 генераций укладываются в месячный лимит Go.
 
 ---
 
@@ -131,7 +138,7 @@
 1. Лид: «база знаний лежит мёртвым грузом, сотрудники не находят ответы».
 2. Что такое RAG и почему это база знаний, а не «промпт» (кратко).
 3. Почему Java + Spring Boot, а не Python (LangChain4j, pgvector, корпоративный контур).
-4. Архитектура (диаграмма: ingestion → pgvector → retrieval → GigaChat → ответ со ссылками).
+4. Архитектура (диаграмма: ingestion → pgvector → retrieval → OpenCode Go → ответ со ссылками).
 5. Как мерили качество (hit@5, hit-rate, «не знаю», p95) — с реальными цифрами демо.
 6. «Не знаю» как фича, а не баг.
 7. Что дальше (backlog v2: hybrid/rerank/agentic).
