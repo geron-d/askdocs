@@ -26,5 +26,25 @@ services:
     entrypoint: ["ollama", "pull", "bge-m3"]
     restart: "no"
 
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: askdocs-postgres
+    environment:
+      POSTGRES_DB: askdocs
+      POSTGRES_USER: askdocs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-askdocs}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U askdocs -d askdocs"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
 volumes:
   ollama-models:
+  pgdata:

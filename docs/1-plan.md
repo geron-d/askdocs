@@ -50,7 +50,7 @@
 
 - [x] **0.1** Оформить подписку OpenCode Go ($10/мес), получить API key в Console, подтвердить вызов `deepseek-v4.1-flash` через `https://opencode.ai/inference/go/openai/v1` из РБ. **Если не проходит — стоп**, возврат к выбору провайдера (GigaChat / YandexGPT), дальше не строим. ✅ Проверено 04.11.2026
 - [x] **0.2** Поднять Ollama с моделью `bge-m3` в `docker-compose`, проверить эмбеддинги и интеграцию `langchain4j-ollama` на Spring Boot 3.5; зафиксировать размерность вектора. ✅ Проверено 04.11.2026: Ollama 0.40.14, `bge-m3` 1.2 GB, **dim = 1024**; `langchain4j-ollama` 1.23.0 на Spring Boot 3.5.16 — интеграционный тест зелёный
-- [ ] **0.3** Поднять PostgreSQL + pgvector (`docker-compose`), проверить, что `langchain4j-pgvector` работает на Spring Boot 3.5
+- [x] **0.3** Поднять PostgreSQL + pgvector (`docker-compose`), проверить, что `langchain4j-pgvector` работает на Spring Boot 3.5. ✅ Проверено 05.11.2026: `pgvector/pgvector:pg17`, extension `vector` 0.8.7; `langchain4j-pgvector` 1.23.0-beta33 на Boot 3.5.16 — insert + search вектора `bge-m3` (1024) зелёные
 - [ ] **0.4 Проверка готовности Этапа 0:** рабочий ключ OpenCode Go + локальные эмбеддинги + pgvector отвечает; 1000 генераций укладываются в месячный лимит Go (allowance `deepseek-v4.1-flash` — $100)
 
 ### Этап 1. Корпус и эталон
