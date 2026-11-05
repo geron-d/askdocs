@@ -48,8 +48,8 @@
 
 ### Этап 0. Предпосылки (блокер доступа + стек)
 
-- [ ] **0.1** Оформить подписку OpenCode Go ($10/мес), получить API key в Console, подтвердить вызов `deepseek-v4.1-flash` через `https://opencode.ai/inference/go/openai/v1` из РБ. **Если не проходит — стоп**, возврат к выбору провайдера (GigaChat / YandexGPT), дальше не строим
-- [ ] **0.2** Поднять Ollama с моделью `bge-m3` в `docker-compose`, проверить эмбеддинги и интеграцию `langchain4j-ollama` на Spring Boot 3.5; зафиксировать размерность вектора
+- [x] **0.1** Оформить подписку OpenCode Go ($10/мес), получить API key в Console, подтвердить вызов `deepseek-v4.1-flash` через `https://opencode.ai/inference/go/openai/v1` из РБ. **Если не проходит — стоп**, возврат к выбору провайдера (GigaChat / YandexGPT), дальше не строим. ✅ Проверено 04.11.2026
+- [x] **0.2** Поднять Ollama с моделью `bge-m3` в `docker-compose`, проверить эмбеддинги и интеграцию `langchain4j-ollama` на Spring Boot 3.5; зафиксировать размерность вектора. ✅ Проверено 04.11.2026: Ollama 0.40.14, `bge-m3` 1.2 GB, **dim = 1024**; `langchain4j-ollama` 1.23.0 на Spring Boot 3.5.16 — интеграционный тест зелёный
 - [ ] **0.3** Поднять PostgreSQL + pgvector (`docker-compose`), проверить, что `langchain4j-pgvector` работает на Spring Boot 3.5
 - [ ] **0.4 Проверка готовности Этапа 0:** рабочий ключ OpenCode Go + локальные эмбеддинги + pgvector отвечает; 1000 генераций укладываются в месячный лимит Go (allowance `deepseek-v4.1-flash` — $100)
 
@@ -107,8 +107,8 @@
 
 ## Блокеры и риски
 
-- **Блокер A — доступ OpenCode Go из РБ.** Сервис заявлен как «для международных пользователей» с глобальным доступом, но РБ явно не подтверждена; снимается только реальной попыткой оформления и вызова (шаг 0.1). Первое действие плана.
-- **Блокер B — назначение OpenCode Go.** Подписка предназначена для coding-агентов, трафик модерируется на злоупотребления. RAG-демо — нетипичный трафик; для демо объёма должно хватить, но как production-канал для клиента подписку продавать нельзя — в статье/README честно указывать ограничение.
+- **Блокер A — назначение OpenCode Go.** Подписка предназначена для coding-агентов, трафик модерируется на злоупотребления. RAG-демо — нетипичный трафик; для демо объёма должно хватить, но как production-канал для клиента подписку продавать нельзя — в статье/README честно указывать ограничение.
+- **Снято:** доступ OpenCode Go из РБ проверен 04.11.2026 (шаг 0.1 выполнен).
 - **Spring AI 2.x требует Spring Boot 4.x.** Поэтому выбран LangChain4j 1.23 на Boot 3.x; альтернатива — отдельное демо на Spring AI (в backlog).
 - **Scope creep приёмки.** Метрика зафиксирована заранее (precision@5 / hit-rate / p95 / «не знаю»), а не «удовлетворённость заказчика».
 - **NDA.** Только синтетические данные; никаких клиентов, скриншотов и схем из рабочих систем.
@@ -141,4 +141,4 @@
 
 `docs.langchain4j.dev` (релиз 1.23.0, интеграции, OpenAI-Compatible, Ollama, pgvector) · `docs.spring.io/spring-ai` (2.0.x требует Spring Boot 4.0/4.1; для Boot 3.x — Spring AI 1.1.x) · `opencode.ai/docs/go` (подписка Go, модели, лимиты, endpoint `opencode.ai/inference/go/openai/v1`) · `ollama.com/library/bge-m3` (многоязычные эмбеддинги) · `github.com/yandex-cloud/yandex-ai-studio-sdk` (асимметричные эмбеддинги `text-search-doc`/`text-search-query`) · `pinecone.io/learn/retrieval-augmented-generation` · `aws.amazon.com/what-is/retrieval-augmented-generation` · `ibm.com/think/topics/retrieval-augmented-generation` (use-cases RAG).
 
-⚠️ Доступность OpenCode Go из РБ явно не подтверждена (проверять шагом 0.1); трафик Go ориентирован на coding-агентов. `bge-m3` в Ollama требует ~2–3 ГБ RAM/VRAM и качается при первом запуске.
+⚠️ Доступность OpenCode Go из РБ проверена 04.11.2026 (шаг 0.1); трафик Go ориентирован на coding-агентов. `bge-m3` в Ollama требует ~2–3 ГБ RAM/VRAM и качается при первом запуске.

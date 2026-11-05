@@ -104,10 +104,10 @@
 
 **Эмбеддинги — локальный Ollama:**
 
-5. Сервис `ollama` в `docker-compose`, модель `bge-m3` (многоязычная, dim 1024); интеграция `langchain4j-ollama`.
-6. Base URL — `http://ollama:11434`, ключ не нужен; том для моделей, чтобы не качать при каждом старте.
+5. Сервис `ollama` в `docker-compose` (образ `ollama/ollama:0.40.14`), модель `bge-m3` (многоязычная, **dim 1024**, ~1.2 GB); интеграция `langchain4j-ollama` 1.23.0 на Spring Boot 3.5.x. One-shot сервис `ollama-init` скачивает модель при первом `docker compose up`.
+6. Base URL — `http://localhost:11434` (с хоста) или `http://ollama:11434` (из контейнера), ключ не нужен; том `ollama-models` сохраняет модель между перезапусками.
 
-**Критерий готовности:** прошёл 1 `/chat/completions` через OpenCode Go и 1 `/api/embed` через Ollama, pgvector принял вектор `bge-m3`; 1000 генераций укладываются в месячный лимит Go.
+**Критерий готовности:** прошёл 1 `/chat/completions` через OpenCode Go и 1 `/api/embed` через Ollama (проверено 04.11.2026: HTTP 200, вектор 1024), pgvector принял вектор `bge-m3`; 1000 генераций укладываются в месячный лимит Go.
 
 ---
 
