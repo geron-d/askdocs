@@ -97,23 +97,24 @@
 
 **Генерация — OpenCode Go:**
 
-1. Оформить подписку Go ($10/мес) в [OpenCode Console](https://opencode.ai/console), скопировать API key.
-2. Endpoint — OpenAI-compatible: `https://opencode.ai/inference/go/openai/v1/chat/completions`, заголовок `Authorization: Bearer <OPENCODE_GO_API_KEY>`, модель `deepseek-v4.1-flash`.
+1. Оформить подписку Go ($10/мес) в [OpenCode Console](https://opencode.ai/console), создать personal API key и скопировать его. Expiration — **Never** или 30 days: истёкший ключ не продлевается, нужен новый.
+2. Endpoint — OpenAI-compatible: `https://opencode.ai/inference/go/openai/v1/chat/completions`, заголовок `Authorization: Bearer <OPENCODE_GO_API_KEY>`. Модель — из `OPENCODE_GO_MODEL`: default **`iceman-contributor-free`**, fallback **`deepseek-v4.1-flash`**. `beam-free` из РБ недоступен (403 RegionError).
 3. Клиент идентифицирует себя своим user-agent и передаёт стабильный `x-opencode-session` на диалог (требование Go).
-4. **Хранение:** `OPENCODE_GO_API_KEY` в env/`.env` (`.env` в `.gitignore`), в `application.yml` — `${OPENCODE_GO_API_KEY}`. Никакого хардкода.
+4. **Хранение:** `OPENCODE_GO_API_KEY` и `OPENCODE_GO_MODEL` в env/`.env` (`.env` в `.gitignore`), в `application.yml` — `${OPENCODE_GO_API_KEY}` / `${OPENCODE_GO_MODEL}`. Никакого хардкода.
+5. **Free-модель:** `iceman-contributor-free` доступна ограниченное время и обучается на запросах (Not ZDR). Использовать только синтетический корпус, без клиентских данных; для production переключать на `deepseek-v4.1-flash`.
 
 **Эмбеддинги — локальный Ollama:**
 
-5. Сервис `ollama` в `docker-compose` (образ `ollama/ollama:0.40.14`), модель `bge-m3` (многоязычная, **dim 1024**, ~1.2 GB); интеграция `langchain4j-ollama` 1.23.0 на Spring Boot 3.5.x. One-shot сервис `ollama-init` скачивает модель при первом `docker compose up`.
-6. Base URL — `http://localhost:11434` (с хоста) или `http://ollama:11434` (из контейнера), ключ не нужен; том `ollama-models` сохраняет модель между перезапусками.
+6. Сервис `ollama` в `docker-compose` (образ `ollama/ollama:0.40.14`), модель `bge-m3` (многоязычная, **dim 1024**, ~1.2 GB); интеграция `langchain4j-ollama` 1.23.0 на Spring Boot 3.5.x. One-shot сервис `ollama-init` скачивает модель при первом `docker compose up`.
+7. Base URL — `http://localhost:11434` (с хоста) или `http://ollama:11434` (из контейнера), ключ не нужен; том `ollama-models` сохраняет модель между перезапусками.
 
 **PostgreSQL + pgvector:**
 
-7. Сервис `postgres` — образ `pgvector/pgvector:pg17`, БД/пользователь `askdocs`, пароль из `${POSTGRES_PASSWORD}` (dev-дефолт в `docker-compose`); данные — в томе `pgdata`.
-8. Extension `vector` (0.8.7) ставится init-скриптом `docker/initdb/01-vector.sql` при первом старте.
-9. `langchain4j-pgvector` **1.23.0-beta33** (интеграционные модули LangChain4j версионируются отдельно от ядра 1.23.0); таблица эмбеддингов — `vector(1024)`.
+8. Сервис `postgres` — образ `pgvector/pgvector:pg17`, БД/пользователь `askdocs`, пароль из `${POSTGRES_PASSWORD}` (dev-дефолт в `docker-compose`); данные — в томе `pgdata`.
+9. Extension `vector` (0.8.7) ставится init-скриптом `docker/initdb/01-vector.sql` при первом старте.
+10. `langchain4j-pgvector` **1.23.0-beta33** (интеграционные модули LangChain4j версионируются отдельно от ядра 1.23.0); таблица эмбеддингов — `vector(1024)`.
 
-**Критерий готовности:** прошёл 1 `/chat/completions` через OpenCode Go, 1 `/api/embed` через Ollama и insert + search через pgvector (проверено 05.11.2026: HTTP 200, вектор 1024, строка в `embeddings_check` найдена); 1000 генераций укладываются в месячный лимит Go.
+**Критерий готовности:** прошёл 1 `/chat/completions` через OpenCode Go (`billing_source=go`, `cost=0`), 1 `/api/embed` через Ollama и insert + search через pgvector (проверено 05.11.2026: HTTP 200, вектор 1024, строка в `embeddings_check` найдена); 1000 генераций на `iceman-contributor-free` — $0, на fallback `deepseek-v4.1-flash` ≈ $0.4–0.8 (<1% лимита Go).
 
 ---
 

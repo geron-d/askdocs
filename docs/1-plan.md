@@ -29,7 +29,7 @@
 | 1 | Тема: FAQ/мануалы вымышленного helpdesk-SaaS |
 | 2 | Язык: только русский |
 | 3 | Стек: LangChain4j 1.23.0 + Spring Boot 3.x, PostgreSQL + pgvector, REST + Telegram-бот |
-| 4 | Провайдер генерации: OpenCode Go (подписка Go, $10/мес), модель `deepseek-v4.1-flash`, OpenAI-compatible endpoint. Эмбеддинги: локальная `bge-m3` через Ollama |
+| 4 | Провайдер генерации: OpenCode Go (подписка Go, $10/мес). Основная модель — **`iceman-contributor-free`** (free, $0, ограниченное время, данные могут использоваться для обучения); fallback — `deepseek-v4.1-flash` (paid, ~$0.4–0.8 за 1000 генераций). `beam-free` недоступен из РБ (403 RegionError). Модель задаётся конфигом. Эмбеддинги: локальная `bge-m3` через Ollama |
 | 5 | Retrieval v1: семантический поиск + порог релевантности + честное «не знаю» |
 | 6 | Корпус: 3–4 PDF + 2–3 DOCX + 30–50 FAQ, ~300–500 чанков; генерация LLM-ассистом + ручная вычитка |
 | 7 | Метрики: precision@5 ≥ 0.80, hit-rate ≥ 0.85, p95 ≤ 2.0 c, accuracy «не знаю» ≥ 0.90 |
@@ -40,7 +40,7 @@
 | 12 | Статья: `docs/article-habr.md` (формат Habr), только в проекте, нигде не публикуется |
 | 13 | Backlog: `docs/backlog/`, один файл на пункт, все `worth: later` |
 
-**Допущения по умолчанию:** Java 21 (LTS) · сборка Maven · Spring Boot 3.5.x · Telegram через `telegrambots` (Java Telegram Bot API) · OpenCode Go через OpenAI-compatible `https://opencode.ai/inference/go/openai/v1` (статичный API key) · эмбеддинги локально через Ollama (`bge-m3`).
+**Допущения по умолчанию:** Java 21 (LTS) · сборка Maven · Spring Boot 3.5.x · Telegram через `telegrambots` (Java Telegram Bot API) · OpenCode Go через OpenAI-compatible `https://opencode.ai/inference/go/openai/v1` (статичный API key) · модель из `OPENCODE_GO_MODEL` (default `iceman-contributor-free`, fallback `deepseek-v4.1-flash`) · эмбеддинги локально через Ollama (`bge-m3`).
 
 ---
 
@@ -51,7 +51,7 @@
 - [x] **0.1** Оформить подписку OpenCode Go ($10/мес), получить API key в Console, подтвердить вызов `deepseek-v4.1-flash` через `https://opencode.ai/inference/go/openai/v1` из РБ. **Если не проходит — стоп**, возврат к выбору провайдера (GigaChat / YandexGPT), дальше не строим. ✅ Проверено 04.11.2026
 - [x] **0.2** Поднять Ollama с моделью `bge-m3` в `docker-compose`, проверить эмбеддинги и интеграцию `langchain4j-ollama` на Spring Boot 3.5; зафиксировать размерность вектора. ✅ Проверено 04.11.2026: Ollama 0.40.14, `bge-m3` 1.2 GB, **dim = 1024**; `langchain4j-ollama` 1.23.0 на Spring Boot 3.5.16 — интеграционный тест зелёный
 - [x] **0.3** Поднять PostgreSQL + pgvector (`docker-compose`), проверить, что `langchain4j-pgvector` работает на Spring Boot 3.5. ✅ Проверено 05.11.2026: `pgvector/pgvector:pg17`, extension `vector` 0.8.7; `langchain4j-pgvector` 1.23.0-beta33 на Boot 3.5.16 — insert + search вектора `bge-m3` (1024) зелёные
-- [ ] **0.4 Проверка готовности Этапа 0:** рабочий ключ OpenCode Go + локальные эмбеддинги + pgvector отвечает; 1000 генераций укладываются в месячный лимит Go (allowance `deepseek-v4.1-flash` — $100)
+- [x] **0.4 Проверка готовности Этапа 0:** рабочий ключ OpenCode Go + локальные эмбеддинги + pgvector отвечает; 1000 генераций укладываются в месячный лимит Go (allowance `deepseek-v4.1-flash` — $100). ✅ Проверено 05.11.2026: ключ работает (`billing_source=go`, `cost=0`), эмбеддинги 1024, pgvector 0.8.7; `iceman-contributor-free` отвечает корректно (ответ, JSON, отказ) за ~2.3 c; 1000 генераций на free-модели — **$0**, на fallback `deepseek-v4.1-flash` ≈ $0.4–0.8 (<1% лимита)
 
 ### Этап 1. Корпус и эталон
 
@@ -65,7 +65,7 @@
 
 - [ ] **2.1** Ingestion: PDF/DOCX/MD → чанкинг (подобрать размер и overlap) → эмбеддинги `bge-m3` (Ollama) → запись в pgvector
 - [ ] **2.2** Retrieval: семантический поиск топ-k + порог релевантности
-- [ ] **2.3** Generation: промпт с цитатами на источники + правило «нет ответа в контексте → честно сказать»; ретраи, таймауты, fallback-модель и деградация при недоступности
+- [ ] **2.3** Generation: промпт с цитатами на источники + правило «нет ответа в контексте → честно сказать»; ретраи, таймауты, fallback `deepseek-v4.1-flash` при недоступности free-модели и деградация
 - [ ] **2.4 Проверка готовности Этапа 2:** end-to-end ответ со ссылками; на негативных вопросах — «не знаю»
 
 ### Этап 3. Фронт
@@ -108,6 +108,7 @@
 ## Блокеры и риски
 
 - **Блокер A — назначение OpenCode Go.** Подписка предназначена для coding-агентов, трафик модерируется на злоупотребления. RAG-демо — нетипичный трафик; для демо объёма должно хватить, но как production-канал для клиента подписку продавать нельзя — в статье/README честно указывать ограничение.
+- **Блокер B — free-модель `iceman-contributor-free`.** Доступна ограниченное время и **обучается на запросах** (Not ZDR): только синтетический корпус и никаких клиентских данных. Если модель исчезнет или p95 выйдет за 2.0 c — переключение на `deepseek-v4.1-flash` конфигом, без изменения кода. `beam-free` из РБ недоступен.
 - **Снято:** доступ OpenCode Go из РБ проверен 04.11.2026 (шаг 0.1 выполнен).
 - **Spring AI 2.x требует Spring Boot 4.x.** Поэтому выбран LangChain4j 1.23 на Boot 3.x; альтернатива — отдельное демо на Spring AI (в backlog).
 - **Scope creep приёмки.** Метрика зафиксирована заранее (precision@5 / hit-rate / p95 / «не знаю»), а не «удовлетворённость заказчика».
