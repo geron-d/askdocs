@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "generated": "2026-11-05",
+  "documents": [
+    {
+      "path": "admin/01-administrirovanie.docx",
+      "source": "src/admin-01-administrirovanie.md",
+      "doc_type": "admin",
+      "title": "SupportDesk: руководство администратора",
+      "sections": 13,
+      "chars": 6827
+    },
+    {
+      "path": "admin/02-tarify-i-oplata.docx",
+      "source": "src/admin-02-tarify-i-oplata.md",
+      "doc_type": "admin",
+      "title": "SupportDesk: тарифы и оплата",
+      "sections": 10,
+      "chars": 4683
+    },
+    {
+      "path": "admin/03-usloviya-i-bezopasnost.docx",
+      "source": "src/admin-03-usloviya-i-bezopasnost.md",
+      "doc_type": "admin",
+      "title": "SupportDesk: условия использования и безопасность",
+      "sections": 10,
+      "chars": 4559
+    },
+    {
+      "path": "manual/01-nachalo-raboty.pdf",
+      "source": "src/manual-01-nachalo-raboty.md",
+      "doc_type": "manual",
+      "title": "SupportDesk: начало работы",
+      "sections": 9,
+      "chars": 5408
+    },
+    {
+      "path": "manual/02-rabota-s-zayavkami.pdf",
+      "source": "src/manual-02-rabota-s-zayavkami.md",
+      "doc_type": "manual",
+      "title": "SupportDesk: работа с заявками",
+      "sections": 13,
+      "chars": 8325
+    },
+    {
+      "path": "manual/03-baza-znaniy.pdf",
+      "source": "src/manual-03-baza-znaniy.md",
+      "doc_type": "manual",
+      "title": "SupportDesk: база знаний",
+      "sections": 9,
+      "chars": 3981
+    },
+    {
+      "path": "manual/04-otchety-integracii.pdf",
+      "source": "src/manual-04-otchety-integracii.md",
+      "doc_type": "manual",
+      "title": "SupportDesk: отчёты и интеграции",
+      "sections": 10,
+      "chars": 5638
+    }
+  ],
+  "faq_items": 40
+}
